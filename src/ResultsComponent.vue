@@ -171,7 +171,14 @@ function parseMarkdownTables(text) {
     
     // If not in table, add line as regular text
     if (!inTable) {
-      result += line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') + '<br>'
+      const headingMatch = line.match(/^###\s+(.*)/)
+      if (headingMatch) {
+        result += `<h4>${headingMatch[1]}</h4>`
+      } else {
+        result += line
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>') + '<br>'
+      }
     }
   }
   
@@ -220,6 +227,50 @@ function convertTableToHTML(tableRows) {
   
   html += '</table></div>'
   return html
+}
+
+// Extract the actual recommendation from Perplexity response
+function extractRecommendationFromResponse(response) {
+  if (!response) {
+    return {
+      fund: 'No recommendation available',
+      reason: 'Better aligned with your risk profile and investment timeline'
+    }
+  }
+  
+  // Extract fund names from the route
+  const fund1Name = fund1.value
+  const fund2Name = fund2.value
+  
+  // Find the recommendation section (fallback to full response if not found)
+  const recommendationMatch = response.match(/\*\*Recommendation:\*\*[\s\S]*?$/)
+  const recommendationText = recommendationMatch ? recommendationMatch[0] : response
+  
+  // Default values
+  debugger;
+  let recommendedFund = 'Analysis complete'
+  const fixedReason = 'Better aligned with your risk profile and investment timeline'
+  
+  // Create regex patterns for both fund names (case insensitive, escape special chars)
+  const fund1Pattern = new RegExp(fund1Name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+  const fund2Pattern = new RegExp(fund2Name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+  
+  // Find which fund appears first in the recommendation section
+  const fund1Index = recommendationText.search(fund1Pattern)
+  const fund2Index = recommendationText.search(fund2Pattern)
+  
+  if (fund1Index !== -1 && fund2Index !== -1) {
+    recommendedFund = fund1Index < fund2Index ? fund1Name : fund2Name
+  } else if (fund1Index !== -1) {
+    recommendedFund = fund1Name
+  } else if (fund2Index !== -1) {
+    recommendedFund = fund2Name
+  }
+  
+  return {
+    fund: recommendedFund,
+    reason: fixedReason
+  }
 }
 
 const recommendation = computed(() => {
