@@ -6,7 +6,7 @@ import QuestionnaireComponent from './QuestionnaireComponent.vue'
 import ResultsComponent from './ResultsComponent.vue'
 
 const routes = [
-  { path: '/', component: HelloWorld, props: { msg: 'Vite + Vue' } },
+  { path: '/', component: SecondComponent },
   { path: '/first', component: FirstComponent },
   { path: '/second', component: SecondComponent },
   { path: '/questionnaire', component: QuestionnaireComponent },

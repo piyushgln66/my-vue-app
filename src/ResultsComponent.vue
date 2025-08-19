@@ -242,12 +242,11 @@ function extractRecommendationFromResponse(response) {
   const fund1Name = fund1.value
   const fund2Name = fund2.value
   
-  // Find the recommendation section (fallback to full response if not found)
-  const recommendationMatch = response.match(/\*\*Recommendation:\*\*[\s\S]*?$/)
+  // Find the recommendation section
+  const recommendationMatch = response.match(/Recommendation:[\s\S]*?$/)
   const recommendationText = recommendationMatch ? recommendationMatch[0] : response
   
   // Default values
-  debugger;
   let recommendedFund = 'Analysis complete'
   const fixedReason = 'Better aligned with your risk profile and investment timeline'
   
@@ -274,12 +273,8 @@ function extractRecommendationFromResponse(response) {
 }
 
 const recommendation = computed(() => {
-  // Extract recommendation from comparison data
-  // This is a placeholder - you'll parse the actual response
-  return {
-    fund: fund1.value,
-    reason: 'Better aligned with your risk profile and investment timeline'
-  }
+  // Extract recommendation from the actual Perplexity response
+  return extractRecommendationFromResponse(comparisonData.value)
 })
 
 function goBack() {
