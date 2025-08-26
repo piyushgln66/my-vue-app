@@ -242,28 +242,45 @@ function extractRecommendationFromResponse(response) {
   const fund1Name = fund1.value
   const fund2Name = fund2.value
   
-  // Find the recommendation section
-  const recommendationMatch = response.match(/Recommendation:[\s\S]*?$/)
-  const recommendationText = recommendationMatch ? recommendationMatch[0] : response
+  // Look for the new consistent format: "Recommendation: [Fund Name]"
+  const recommendationMatch = response.match(/Recommendation:\s*(.+?)(?:\n|$)/i)
   
-  // Default values
   let recommendedFund = 'Analysis complete'
   const fixedReason = 'Better aligned with your risk profile and investment timeline'
   
-  // Create regex patterns for both fund names (case insensitive, escape special chars)
-  const fund1Pattern = new RegExp(fund1Name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
-  const fund2Pattern = new RegExp(fund2Name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
-  
-  // Find which fund appears first in the recommendation section
-  const fund1Index = recommendationText.search(fund1Pattern)
-  const fund2Index = recommendationText.search(fund2Pattern)
-  
-  if (fund1Index !== -1 && fund2Index !== -1) {
-    recommendedFund = fund1Index < fund2Index ? fund1Name : fund2Name
-  } else if (fund1Index !== -1) {
-    recommendedFund = fund1Name
-  } else if (fund2Index !== -1) {
-    recommendedFund = fund2Name
+  if (recommendationMatch) {
+    const extractedFundName = recommendationMatch[1].trim()
+    
+    // Check if the extracted fund name contains either of our fund names
+    if (extractedFundName.toLowerCase().includes(fund1Name.toLowerCase())) {
+      recommendedFund = fund1Name
+    } else if (extractedFundName.toLowerCase().includes(fund2Name.toLowerCase())) {
+      recommendedFund = fund2Name
+    } else {
+      // If the extracted name doesn't match exactly, try to find the first occurrence
+      const fund1Index = response.toLowerCase().indexOf(fund1Name.toLowerCase())
+      const fund2Index = response.toLowerCase().indexOf(fund2Name.toLowerCase())
+      
+      if (fund1Index !== -1 && fund2Index !== -1) {
+        recommendedFund = fund1Index < fund2Index ? fund1Name : fund2Name
+      } else if (fund1Index !== -1) {
+        recommendedFund = fund1Name
+      } else if (fund2Index !== -1) {
+        recommendedFund = fund2Name
+      }
+    }
+  } else {
+    // Fallback: if no "Recommendation:" format found, search for first occurrence
+    const fund1Index = response.toLowerCase().indexOf(fund1Name.toLowerCase())
+    const fund2Index = response.toLowerCase().indexOf(fund2Name.toLowerCase())
+    
+    if (fund1Index !== -1 && fund2Index !== -1) {
+      recommendedFund = fund1Index < fund2Index ? fund1Name : fund2Name
+    } else if (fund1Index !== -1) {
+      recommendedFund = fund1Name
+    } else if (fund2Index !== -1) {
+      recommendedFund = fund2Name
+    }
   }
   
   return {

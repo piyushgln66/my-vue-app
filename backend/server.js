@@ -99,7 +99,12 @@ User's preferences:
 
 Please provide a detailed comparison based on these criteria. Include points like historical returns, risk measures (standard deviation, Sharpe ratio), tax efficiency, fund age, AUM, fund manager experience, and overall suitability for the user's profile.
 
-Be concise and use bullet points or a table if needed. Conclude with a recommendation on which fund may be more aligned with the user's preferences.`
+Be concise and use bullet points or tables if needed. 
+
+IMPORTANT: End your analysis with a clear recommendation in this exact format:
+"Recommendation: [Fund Name]"
+
+Where [Fund Name] should be either "${fund1}" or "${fund2}" based on which fund better aligns with the user's preferences.`
 }
 
 app.listen(PORT, () => {
