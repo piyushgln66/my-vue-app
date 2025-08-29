@@ -7,16 +7,9 @@
 
     <!-- Fund Selection Summary -->
     <div class="fund-summary">
-      <div class="fund-card">
-        <h3>Fund A</h3>
-        <p class="fund-name">{{ fund1 }}</p>
-      </div>
-      <div class="vs-divider">
-        <span>VS</span>
-      </div>
-      <div class="fund-card">
-        <h3>Fund B</h3>
-        <p class="fund-name">{{ fund2 }}</p>
+      <div v-for="(fund, index) in selectedFunds" :key="index" class="fund-card">
+        <h3>Fund {{ String.fromCharCode(65 + index) }}</h3>
+        <p class="fund-name">{{ fund }}</p>
       </div>
     </div>
 
@@ -55,32 +48,7 @@
     <div class="comparison-results">
       <h3>Detailed Comparison</h3>
       
-      <!-- Key Metrics Table -->
-      <div class="metrics-table">
-        <h4>Key Performance Metrics</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>{{ fund1 }}</th>
-              <th>{{ fund2 }}</th>
-              <th>Winner</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="metric in keyMetrics" :key="metric.name">
-              <td class="metric-name">{{ metric.name }}</td>
-              <td class="fund-a-value">{{ metric.fundA }}</td>
-              <td class="fund-b-value">{{ metric.fundB }}</td>
-              <td class="winner">
-                <span :class="['winner-badge', metric.winner]">
-                  {{ metric.winner === 'fundA' ? 'Fund A' : metric.winner === 'fundB' ? 'Fund B' : 'Tie' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+
 
       <!-- Detailed Analysis -->
       <div class="detailed-analysis">
@@ -98,6 +66,8 @@
           </div>
         </div>
       </div>
+      
+
     </div>
 
     <!-- Action Buttons -->
@@ -116,27 +86,28 @@ const route = useRoute()
 const router = useRouter()
 
 // Extract data from route
-const fund1 = ref(route.query.fund1 || 'Fund A')
-const fund2 = ref(route.query.fund2 || 'Fund B')
 const preferences = ref(route.query.preferences ? JSON.parse(route.query.preferences) : {})
 const comparisonData = ref(route.query.comparison || '')
 
-// Parse comparison data to extract key metrics
-const keyMetrics = computed(() => {
-  // This is a placeholder - you'll need to parse the actual Perplexity response
-  return [
-    { name: 'Historical Returns', fundA: '12.5%', fundB: '15.2%', winner: 'fundB' },
-    { name: 'Risk (Std Dev)', fundA: '8.2%', fundB: '12.1%', winner: 'fundA' },
-    { name: 'Sharpe Ratio', fundA: '1.52', fundB: '1.25', winner: 'fundA' },
-    { name: 'Expense Ratio', fundA: '1.2%', fundB: '1.8%', winner: 'fundA' },
-    { name: 'Fund Age', fundA: '15 years', fundB: '8 years', winner: 'fundA' }
-  ]
+// Extract all funds dynamically (fund1, fund2, fund3, fund4)
+const selectedFunds = computed(() => {
+  const funds = []
+  for (let i = 1; i <= 4; i++) {
+    if (route.query[`fund${i}`]) {
+      funds.push(route.query[`fund${i}`])
+    }
+  }
+  return funds
 })
+
+
 
 const formattedAnalysis = computed(() => {
   // Parse markdown tables and format the Perplexity response
   return parseMarkdownTables(comparisonData.value)
 })
+
+
 
 // Parse markdown tables and convert to HTML
 function parseMarkdownTables(text) {
@@ -238,9 +209,8 @@ function extractRecommendationFromResponse(response) {
     }
   }
   
-  // Extract fund names from the route
-  const fund1Name = fund1.value
-  const fund2Name = fund2.value
+  // Get selected funds from computed property
+  const funds = selectedFunds.value
   
   // Look for the new consistent format: "Recommendation: [Fund Name]"
   const recommendationMatch = response.match(/Recommendation:\s*(.+?)(?:\n|$)/i)
@@ -251,35 +221,46 @@ function extractRecommendationFromResponse(response) {
   if (recommendationMatch) {
     const extractedFundName = recommendationMatch[1].trim()
     
-    // Check if the extracted fund name contains either of our fund names
-    if (extractedFundName.toLowerCase().includes(fund1Name.toLowerCase())) {
-      recommendedFund = fund1Name
-    } else if (extractedFundName.toLowerCase().includes(fund2Name.toLowerCase())) {
-      recommendedFund = fund2Name
-    } else {
-      // If the extracted name doesn't match exactly, try to find the first occurrence
-      const fund1Index = response.toLowerCase().indexOf(fund1Name.toLowerCase())
-      const fund2Index = response.toLowerCase().indexOf(fund2Name.toLowerCase())
+    // Check if the extracted fund name contains any of our selected funds
+    for (let i = 0; i < funds.length; i++) {
+      if (extractedFundName.toLowerCase().includes(funds[i].toLowerCase())) {
+        recommendedFund = funds[i]
+        break
+      }
+    }
+    
+    // If no match found, try to find the first occurrence
+    if (recommendedFund === 'Analysis complete') {
+      let firstIndex = -1
+      let firstFund = ''
       
-      if (fund1Index !== -1 && fund2Index !== -1) {
-        recommendedFund = fund1Index < fund2Index ? fund1Name : fund2Name
-      } else if (fund1Index !== -1) {
-        recommendedFund = fund1Name
-      } else if (fund2Index !== -1) {
-        recommendedFund = fund2Name
+      for (let i = 0; i < funds.length; i++) {
+        const fundIndex = response.toLowerCase().indexOf(funds[i].toLowerCase())
+        if (fundIndex !== -1 && (firstIndex === -1 || fundIndex < firstIndex)) {
+          firstIndex = fundIndex
+          firstFund = funds[i]
+        }
+      }
+      
+      if (firstFund) {
+        recommendedFund = firstFund
       }
     }
   } else {
     // Fallback: if no "Recommendation:" format found, search for first occurrence
-    const fund1Index = response.toLowerCase().indexOf(fund1Name.toLowerCase())
-    const fund2Index = response.toLowerCase().indexOf(fund2Name.toLowerCase())
+    let firstIndex = -1
+    let firstFund = ''
     
-    if (fund1Index !== -1 && fund2Index !== -1) {
-      recommendedFund = fund1Index < fund2Index ? fund1Name : fund2Name
-    } else if (fund1Index !== -1) {
-      recommendedFund = fund1Name
-    } else if (fund2Index !== -1) {
-      recommendedFund = fund2Name
+    for (let i = 0; i < funds.length; i++) {
+      const fundIndex = response.toLowerCase().indexOf(funds[i].toLowerCase())
+      if (fundIndex !== -1 && (firstIndex === -1 || fundIndex < firstIndex)) {
+        firstIndex = fundIndex
+        firstFund = funds[i]
+      }
+    }
+    
+    if (firstFund) {
+      recommendedFund = firstFund
     }
   }
   
@@ -303,7 +284,7 @@ function startNewComparison() {
 }
 
 onMounted(() => {
-  console.log('Results page loaded with:', { fund1: fund1.value, fund2: fund2.value, preferences: preferences.value })
+  console.log('Results page loaded with:', { funds: selectedFunds.value, preferences: preferences.value })
 })
 </script>
 
@@ -336,8 +317,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 30px;
+  gap: 20px;
   margin-bottom: 40px;
+  flex-wrap: wrap;
 }
 
 .fund-card {
@@ -425,71 +407,7 @@ onMounted(() => {
   font-size: 1.3rem;
 }
 
-.metrics-table {
-  margin-bottom: 30px;
-}
 
-.metrics-table h4 {
-  color: #34495e;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #f8f9fa;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-th, td {
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #ecf0f1;
-}
-
-th {
-  background: #42b983;
-  color: white;
-  font-weight: 600;
-}
-
-.metric-name {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.fund-a-value, .fund-b-value {
-  text-align: center;
-  font-weight: 500;
-}
-
-.winner {
-  text-align: center;
-}
-
-.winner-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.winner-badge.fundA {
-  background: #e8f5e8;
-  color: #27ae60;
-}
-
-.winner-badge.fundB {
-  background: #e8f5e8;
-  color: #27ae60;
-}
-
-.winner-badge.tie {
-  background: #fef9e7;
-  color: #f39c12;
-}
 
 .detailed-analysis {
   margin-bottom: 30px;
@@ -588,6 +506,8 @@ th {
   color: #2c3e50;
   line-height: 1.5;
 }
+
+
 
 .action-buttons {
   display: flex;

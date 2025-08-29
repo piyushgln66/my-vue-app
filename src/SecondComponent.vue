@@ -1,172 +1,224 @@
 <template>
   <div>
     <h1>Mutual Fund Comparator</h1>
-    <div class="input-row">
-      <span class="input-label">Fund 1</span>
+    
+    <!-- Dynamic fund inputs -->
+    <div v-for="index in fundCount" :key="index" class="input-row">
+      <span class="input-label">Fund {{ index }}</span>
       <div class="autocomplete-container">
         <input
-          v-model="fund1Input"
+          v-model="fundInputs[index - 1]"
           type="text"
-          placeholder="Enter the name of the fund..."
-          @input="filterFunds1"
-          @focus="showDropdown1 = true"
-          @blur="hideDropdown1"
-          :class="{ 'error': fund1Error }"
+          :placeholder="`Enter the name of fund ${index}...`"
+          @input="filterFunds(index - 1)"
+          @focus="showDropdowns[index - 1] = true"
+          @blur="hideDropdown(index - 1)"
+          :class="{ 'error': fundErrors[index - 1] }"
         />
-        <div v-if="showDropdown1 && filteredFunds1.length > 0" class="dropdown">
+        <div v-if="showDropdowns[index - 1] && filteredFunds[index - 1].length > 0" class="dropdown">
           <div
-            v-for="fund in filteredFunds1"
+            v-for="fund in filteredFunds[index - 1]"
             :key="fund"
             class="dropdown-item"
-            @click="selectFund1(fund)"
+            @click="selectFund(index - 1, fund)"
           >
             {{ fund }}
           </div>
         </div>
       </div>
-    </div>
-    <div class="input-row">
-      <span class="input-label">Fund 2</span>
-      <div class="autocomplete-container">
-        <input
-          v-model="fund2Input"
-          type="text"
-          placeholder="Enter the name of the fund..."
-          @input="filterFunds2"
-          @focus="showDropdown2 = true"
-          @blur="hideDropdown2"
-          :class="{ 'error': fund2Error }"
-        />
-        <div v-if="showDropdown2 && filteredFunds2.length > 0" class="dropdown">
-          <div
-            v-for="fund in filteredFunds2"
-            :key="fund"
-            class="dropdown-item"
-            @click="selectFund2(fund)"
-          >
-            {{ fund }}
-          </div>
-        </div>
+      
+      <!-- Show Add/Remove buttons only on the last fund row -->
+      <div v-if="index === fundCount" class="fund-controls">
+        <button 
+          @click="addFund" 
+          :disabled="fundCount >= 4"
+          class="control-btn add-btn"
+          :class="{ 'disabled': fundCount >= 4 }"
+        >
+          Add
+        </button>
+        
+        <button 
+          @click="removeFund" 
+          :disabled="fundCount <= 2"
+          class="control-btn remove-btn"
+          :class="{ 'disabled': fundCount <= 2 }"
+        >
+          Remove
+        </button>
       </div>
     </div>
-    <button @click="handleClick">Next</button>
+
+    <button @click="handleClick" class="next-btn">Next</button>
     <p v-if="submittedValue">You entered: {{ submittedValue }}</p>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { mutualFunds } from './data/mutualFunds.js'
 
 const router = useRouter()
-const fund1Input = ref('')
-const fund2Input = ref('')
+
+// Dynamic fund management
+const fundCount = ref(2)
+const fundInputs = ref(['', '']) // Start with 2 funds
+const showDropdowns = ref([false, false])
+const filteredFunds = ref([[], []])
+const fundErrors = ref([false, false])
+
 const submittedValue = ref('')
-const showDropdown1 = ref(false)
-const showDropdown2 = ref(false)
-const filteredFunds1 = ref([])
-const filteredFunds2 = ref([])
-const fund1Error = ref(false)
-const fund2Error = ref(false)
 const errorMessage = ref('')
 
-function filterFunds1() {
-  if (fund1Input.value.trim() === '') {
-    filteredFunds1.value = []
+// Computed properties for validation
+const hasValidFunds = computed(() => {
+  return fundInputs.value.slice(0, fundCount.value).every(input => 
+    input && mutualFunds.includes(input)
+  )
+})
+
+const selectedFunds = computed(() => {
+  return fundInputs.value.slice(0, fundCount.value).filter(fund => fund)
+})
+
+function addFund() {
+  if (fundCount.value < 4) {
+    fundCount.value++
+    // Add new input fields
+    fundInputs.value.push('')
+    showDropdowns.value.push(false)
+    filteredFunds.value.push([])
+    fundErrors.value.push(false)
+  }
+}
+
+function removeFund() {
+  if (fundCount.value > 2) {
+    fundCount.value--
+    // Remove last input fields
+    fundInputs.value.pop()
+    showDropdowns.value.pop()
+    filteredFunds.value.pop()
+    fundErrors.value.pop()
+    
+    // Clear any error messages
+    errorMessage.value = ''
+  }
+}
+
+function filterFunds(index) {
+  if (fundInputs.value[index].trim() === '') {
+    filteredFunds.value[index] = []
     return
   }
   
   // Clear errors when user starts typing
-  fund1Error.value = false
+  fundErrors.value[index] = false
   errorMessage.value = ''
   
-  const query = fund1Input.value.toLowerCase()
-  filteredFunds1.value = mutualFunds.filter(fund => 
+  // Clear all fund errors when any fund is being modified
+  fundErrors.value.forEach((_, i) => {
+    fundErrors.value[i] = false
+  })
+  
+  const query = fundInputs.value[index].toLowerCase()
+  filteredFunds.value[index] = mutualFunds.filter(fund => 
     fund.toLowerCase().includes(query)
   )
 }
 
-function filterFunds2() {
-  if (fund2Input.value.trim() === '') {
-    filteredFunds2.value = []
-    return
-  }
-  
-  // Clear errors when user starts typing
-  fund2Error.value = false
+function selectFund(index, fund) {
+  fundInputs.value[index] = fund
+  showDropdowns.value[index] = false
+  filteredFunds.value[index] = []
+  fundErrors.value[index] = false
   errorMessage.value = ''
   
-  const query = fund2Input.value.toLowerCase()
-  filteredFunds2.value = mutualFunds.filter(fund => 
-    fund.toLowerCase().includes(query)
-  )
+  // Clear errors for all funds when a new selection is made
+  fundErrors.value.forEach((_, i) => {
+    fundErrors.value[i] = false
+  })
 }
 
-function selectFund1(fund) {
-  fund1Input.value = fund
-  showDropdown1.value = false
-  filteredFunds1.value = []
-  fund1Error.value = false
-  errorMessage.value = ''
-}
-
-function selectFund2(fund) {
-  fund2Input.value = fund
-  showDropdown2.value = false
-  filteredFunds2.value = []
-  fund2Error.value = false
-  errorMessage.value = ''
-}
-
-function hideDropdown1() {
+function hideDropdown(index) {
   setTimeout(() => {
-    showDropdown1.value = false
+    showDropdowns.value[index] = false
     // Validate if the entered value exists in the list
-    if (fund1Input.value && !mutualFunds.includes(fund1Input.value)) {
-      fund1Input.value = ''
+    if (fundInputs.value[index] && !mutualFunds.includes(fundInputs.value[index])) {
+      fundInputs.value[index] = ''
     }
   }, 200)
 }
 
-function hideDropdown2() {
-  setTimeout(() => {
-    showDropdown2.value = false
-    // Validate if the entered value exists in the list
-    if (fund2Input.value && !mutualFunds.includes(fund2Input.value)) {
-      fund2Input.value = ''
+// Helper function to find duplicate values in an array
+function findDuplicates(array) {
+  const seen = new Set()
+  const duplicates = []
+  
+  array.forEach(item => {
+    if (seen.has(item)) {
+      if (!duplicates.includes(item)) {
+        duplicates.push(item)
+      }
+    } else {
+      seen.add(item)
     }
-  }, 200)
+  })
+  
+  return duplicates
 }
 
 function handleClick() {
   // Clear invalid entries first
-  if (fund1Input.value && !mutualFunds.includes(fund1Input.value)) {
-    fund1Input.value = ''
-  }
-  if (fund2Input.value && !mutualFunds.includes(fund2Input.value)) {
-    fund2Input.value = ''
+  for (let i = 0; i < fundCount.value; i++) {
+    if (fundInputs.value[i] && !mutualFunds.includes(fundInputs.value[i])) {
+      fundInputs.value[i] = ''
+    }
   }
   
-  if (!fund1Input.value) {
-    fund1Error.value = true
-    errorMessage.value = 'Please select a Fund 1.'
+  // Validate all required funds
+  let hasError = false
+  for (let i = 0; i < fundCount.value; i++) {
+    if (!fundInputs.value[i]) {
+      fundErrors.value[i] = true
+      hasError = true
+    }
+  }
+  
+  if (hasError) {
+    errorMessage.value = `Please select all ${fundCount.value} funds.`
     return
   }
-  if (!fund2Input.value) {
-    fund2Error.value = true
-    errorMessage.value = 'Please select a Fund 2.'
+  
+  // Check for duplicate funds
+  const selectedFunds = fundInputs.value.slice(0, fundCount.value)
+  const duplicates = findDuplicates(selectedFunds)
+  
+  if (duplicates.length > 0) {
+    // Highlight duplicate funds with errors
+    duplicates.forEach(fundName => {
+      for (let i = 0; i < fundCount.value; i++) {
+        if (fundInputs.value[i] === fundName) {
+          fundErrors.value[i] = true
+        }
+      }
+    })
+    
+    errorMessage.value = `Cannot compare the same fund multiple times. Please select different funds.`
     return
   }
   
   // Navigate to questionnaire page with selected funds
+  const query = {}
+  for (let i = 0; i < fundCount.value; i++) {
+    query[`fund${i + 1}`] = fundInputs.value[i]
+  }
+  
   router.push({
     path: '/questionnaire',
-    query: {
-      fund1: fund1Input.value,
-      fund2: fund2Input.value
-    }
+    query: query
   })
 }
 </script>
@@ -177,21 +229,26 @@ function handleClick() {
   align-items: center;
   margin-bottom: 10px;
   width: 100%;
-  max-width: 500px;
+  max-width: 800px;
+  position: relative;
 }
+
 h1 {
   max-width: 500px;
 }
+
 .input-label {
   margin-right: 12px;
   font-weight: 500;
   font-size: 1.1rem;
   min-width: 60px;
 }
+
 .autocomplete-container {
   position: relative;
   flex: 1;
 }
+
 input {
   flex: 1;
   margin-bottom: 10px;
@@ -202,6 +259,7 @@ input {
   box-sizing: border-box;
   width: 100%;
 }
+
 .dropdown {
   position: absolute;
   top: 100%;
@@ -215,31 +273,83 @@ input {
   overflow-y: auto;
   z-index: 1000;
 }
+
 .dropdown-item {
   padding: 10px 20px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
 }
+
 .dropdown-item:hover {
   background-color: #f5f5f5;
 }
+
 .dropdown-item:last-child {
   border-bottom: none;
 }
-button {
-  padding: 6px 12px;
+
+.fund-controls {
+  display: flex;
+  gap: 10px;
+  position: absolute;
+  right: -200px;
+  top: 50%;
+  transform: translateY(-50%);
+  align-items: center;
+}
+
+.control-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.add-btn {
+  background: #28a745;
+  color: white;
+}
+
+.add-btn:hover:not(.disabled) {
+  background: #218838;
+}
+
+.remove-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.remove-btn:hover:not(.disabled) {
+  background: #c82333;
+}
+
+.control-btn.disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.next-btn {
+  padding: 12px 24px;
   background: #42b983;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
 }
-button:hover {
+
+.next-btn:hover {
   background: #369870;
 }
+
 .error {
   border-color: red;
 }
+
 .error-message {
   color: red;
   font-size: 0.9rem;

@@ -92,10 +92,13 @@ const answers = ref({})
 
 // Get selected funds from route params or query
 const selectedFunds = computed(() => {
-  return {
-    fundA: route.query.fund1 || 'Fund A',
-    fundB: route.query.fund2 || 'Fund B'
+  const funds = []
+  for (let i = 1; i <= 4; i++) {
+    if (route.query[`fund${i}`]) {
+      funds.push(route.query[`fund${i}`])
+    }
   }
+  return funds
 })
 
 const currentQuestion = computed(() => questions[currentQuestionIndex.value])
@@ -139,10 +142,15 @@ function handleSliderChange(event) {
 }
 
 function generatePerplexityPrompt() {
-  const prompt = `Compare the following two mutual funds based on the user's investment preferences:
+  // Create fund labels dynamically
+  const fundLabels = selectedFunds.value.map((fund, index) => {
+    const label = String.fromCharCode(65 + index) // A, B, C, D
+    return `Fund ${label}: ${fund}`
+  }).join('\n')
 
-Fund A: ${selectedFunds.value.fundA}
-Fund B: ${selectedFunds.value.fundB}
+  const prompt = `Compare the following ${selectedFunds.value.length} mutual funds based on the user's investment preferences:
+
+${fundLabels}
 
 User's preferences:
 - Investment Time Horizon: ${answers.value.time_horizon || 'Not specified'}
@@ -192,8 +200,10 @@ async function submitQuestionnaire() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        fund1: selectedFunds.value.fundA,
-        fund2: selectedFunds.value.fundB,
+        ...selectedFunds.value.reduce((acc, fund, index) => {
+          acc[`fund${index + 1}`] = fund
+          return acc
+        }, {}),
         preferences: answers.value
       })
     })
@@ -205,14 +215,19 @@ async function submitQuestionnaire() {
 
     if (result.success) {
       // Navigate to results page with all data
+      const query = {
+        preferences: JSON.stringify(answers.value),
+        comparison: result.comparison
+      }
+      
+      // Add all selected funds to query
+      selectedFunds.value.forEach((fund, index) => {
+        query[`fund${index + 1}`] = fund
+      })
+      
       router.push({
         path: '/results',
-        query: {
-          fund1: selectedFunds.value.fundA,
-          fund2: selectedFunds.value.fundB,
-          preferences: JSON.stringify(answers.value),
-          comparison: result.comparison
-        }
+        query: query
       })
     } else {
       // Show error

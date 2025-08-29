@@ -21,18 +21,26 @@ app.get('/health', (req, res) => {
 // Perplexity API proxy endpoint
 app.post('/api/compare-funds', async (req, res) => {
   try {
-    const { fund1, fund2, preferences } = req.body
+    const { preferences, ...fundData } = req.body
 
-    // Validate input
-    if (!fund1 || !fund2) {
+    // Extract fund names dynamically (fund1, fund2, fund3, fund4)
+    const funds = []
+    for (let i = 1; i <= 4; i++) {
+      if (fundData[`fund${i}`]) {
+        funds.push(fundData[`fund${i}`])
+      }
+    }
+
+    // Validate input - need at least 2 funds
+    if (funds.length < 2) {
       return res.status(400).json({
         success: false,
-        error: 'Fund names are required'
+        error: 'At least 2 fund names are required'
       })
     }
 
     // Generate prompt
-    const prompt = generatePrompt(fund1, fund2, preferences)
+    const prompt = generatePrompt(funds, preferences)
 
     // Call Perplexity API
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -46,7 +54,7 @@ app.post('/api/compare-funds', async (req, res) => {
         messages: [
           {
             "role": "system",
-            "content": "You are an expert financial analyst assistant. Provide detailed, objective, and concise side-by-side comparisons of mutual funds based on user-defined investment preferences. Use bullet points or tables for clarity, cover all requested metrics, and conclude with a recommendation that clearly explains which fund aligns best with the user's profile."
+            "content": "You are an expert financial analyst assistant. Provide detailed, objective, and concise comparisons of multiple mutual funds (2-4 funds) based on user-defined investment preferences. Use bullet points or tables for clarity, cover all requested metrics, and conclude with a recommendation that clearly explains which fund aligns best with the user's profile."
           },
           {
             "role": "user",
@@ -79,11 +87,16 @@ app.post('/api/compare-funds', async (req, res) => {
   }
 })
 
-function generatePrompt(fund1, fund2, preferences) {
-  return `Compare the following two mutual funds based on the user's investment preferences:
+function generatePrompt(funds, preferences) {
+  // Create fund labels dynamically
+  const fundLabels = funds.map((fund, index) => {
+    const label = String.fromCharCode(65 + index) // A, B, C, D
+    return `Fund ${label}: ${fund}`
+  }).join('\n')
 
-Fund A: ${fund1}
-Fund B: ${fund2}
+  return `Compare the following ${funds.length} mutual funds based on the user's investment preferences:
+
+${fundLabels}
 
 User's preferences:
 - Investment Time Horizon: ${preferences.time_horizon || 'Not specified'}
@@ -104,7 +117,7 @@ Be concise and use bullet points or tables if needed.
 IMPORTANT: End your analysis with a clear recommendation in this exact format:
 "Recommendation: [Fund Name]"
 
-Where [Fund Name] should be either "${fund1}" or "${fund2}" based on which fund better aligns with the user's preferences.`
+Where [Fund Name] should be one of the following funds: ${funds.join(', ')} based on which fund better aligns with the user's preferences.`
 }
 
 app.listen(PORT, () => {
