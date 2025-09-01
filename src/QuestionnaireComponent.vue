@@ -3,6 +3,9 @@
     <h1>Personalized Fund Comparison</h1>
     <p class="subtitle">Answer these questions to get personalized fund recommendations</p>
     
+    <!-- Loading Screen -->
+    <LoadingScreen :is-visible="isLoading" />
+    
     <div v-if="currentQuestion" class="question-card">
       <div class="question-header">
         <span class="question-number">Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</span>
@@ -81,14 +84,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { questions } from './data/questions.js'
+import LoadingScreen from './components/LoadingScreen.vue'
 
 const route = useRoute()
 const router = useRouter()
 const currentQuestionIndex = ref(0)
 const answers = ref({})
+const isLoading = ref(false)
+
+// Debug: Log loading state changes
+watch(isLoading, (newValue) => {
+  console.log('Loading state changed:', newValue)
+})
 
 // Get selected funds from route params or query
 const selectedFunds = computed(() => {
@@ -173,25 +183,8 @@ Be concise and use bullet points or a table if needed. Conclude with a recommend
 
 async function submitQuestionnaire() {
   try {
-    // Show loading state
-    const loadingElement = document.createElement('div')
-    loadingElement.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      z-index: 1000;
-      text-align: center;
-    `
-    loadingElement.innerHTML = `
-      <h3>Generating Comparison...</h3>
-      <p>Please wait while we analyze your funds...</p>
-    `
-    document.body.appendChild(loadingElement)
+    // Show loading screen
+    isLoading.value = true
 
     // Call the API
     const response = await fetch('https://mutual-fund-comparator-backend.onrender.com/api/compare-funds', {
@@ -210,8 +203,8 @@ async function submitQuestionnaire() {
 
     const result = await response.json()
     
-    // Remove loading element
-    document.body.removeChild(loadingElement)
+    // Hide loading screen
+    isLoading.value = false
 
     if (result.success) {
       // Navigate to results page with all data
@@ -236,6 +229,7 @@ async function submitQuestionnaire() {
 
   } catch (error) {
     console.error('Error:', error)
+    isLoading.value = false
     alert('Failed to generate comparison. Please try again.')
   }
 }
