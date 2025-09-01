@@ -425,11 +425,17 @@ onMounted(() => {
   border-radius: 8px;
   line-height: 1.6;
   color: #2c3e50;
+  /* Mobile text improvements */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .table-container {
   margin: 20px 0;
   overflow-x: auto;
+  /* Mobile table improvements */
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
 }
 
 .comparison-table {
@@ -545,18 +551,175 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .results-container {
+    padding: 15px;
+  }
+  
+  .results-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+  
+  .results-header .subtitle {
+    font-size: 0.9rem;
+  }
+  
   .fund-summary {
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
+  }
+  
+  .fund-card {
+    padding: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .fund-card h3 {
+    font-size: 1rem;
+  }
+  
+  .fund-name {
+    font-size: 0.9rem;
+    word-break: break-word;
+  }
+  
+  .preferences-summary {
+    padding: 15px;
+  }
+  
+  .preferences-summary h3 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
   }
   
   .preferences-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .preference-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .preference-item .label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  .preference-item .value {
+    font-size: 0.9rem;
+  }
+  
+  .comparison-results {
+    padding: 15px;
+  }
+  
+  .comparison-results h3 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+  }
+  
+  .detailed-analysis {
+    margin-bottom: 20px;
+  }
+  
+  .detailed-analysis h4 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  
+  .analysis-content {
+    padding: 15px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .table-container {
+    margin: 15px 0;
+  }
+  
+  .comparison-table {
+    font-size: 0.8rem;
+    margin: 10px 0;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    padding: 8px 6px;
+    font-size: 0.8rem;
+  }
+  
+  .recommendation {
+    padding: 15px;
+  }
+  
+  .recommendation h4 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  
+  .recommendation-badge {
+    gap: 8px;
+  }
+  
+  .recommended-fund {
+    font-size: 1.1rem;
+  }
+  
+  .recommendation-reason {
+    font-size: 0.9rem;
   }
   
   .action-buttons {
     flex-direction: column;
     align-items: center;
+    gap: 15px;
+    margin-top: 30px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    max-width: 300px;
+    padding: 15px 20px;
+    font-size: 1rem;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .results-container {
+    padding: 10px;
+  }
+  
+  .results-header h1 {
+    font-size: 1.3rem;
+  }
+  
+  .fund-card {
+    padding: 12px;
+  }
+  
+  .preferences-summary,
+  .comparison-results {
+    padding: 12px;
+  }
+  
+  .analysis-content {
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    padding: 6px 4px;
+    font-size: 0.75rem;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 12px 16px;
+    font-size: 0.9rem;
   }
 }
 </style> 
