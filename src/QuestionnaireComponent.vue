@@ -203,8 +203,10 @@ async function submitQuestionnaire() {
 
     const result = await response.json()
     
-    // Hide loading screen
-    isLoading.value = false
+    // Complete progress bar before hiding loading screen
+    setTimeout(() => {
+      isLoading.value = false
+    }, 500) // Small delay to show 100% completion
 
     if (result.success) {
       // Navigate to results page with all data

@@ -50,6 +50,11 @@ const props = defineProps({
   }
 })
 
+// Expose method to complete progress when API response is about to come
+const completeProgress = () => {
+  progressPercentage.value = 100
+}
+
 const progressPercentage = ref(0)
 const currentMessageIndex = ref(0)
 const currentMessage = ref('')
@@ -80,18 +85,26 @@ onUnmounted(() => {
 })
 
 const startLoading = () => {
-  // Start progress bar animation
+  // Start progress bar animation - keep moving until 92%, then slow down, stop at 99%
   progressInterval = setInterval(() => {
-    if (progressPercentage.value < 95) {
-      progressPercentage.value += Math.random() * 3 + 1
+    if (progressPercentage.value < 75) {
+      // Fast initial phase: 1.5 to 3% every 200ms (like before)
+      progressPercentage.value += (Math.random() * 1.5 + 1.5)
+    } else if (progressPercentage.value < 92) {
+      // Slower phase: 0.5 to 1.5% every 300ms
+      progressPercentage.value += (Math.random() * 1 + 0.5)
+    } else if (progressPercentage.value < 99) {
+      // Very slow phase: 0.1 to 0.5% every 500ms
+      progressPercentage.value += (Math.random() * 0.4 + 0.1)
     }
+    // Stop at 99% until API response comes
   }, 200)
   
   // Start message rotation
   messageInterval = setInterval(() => {
     currentMessageIndex.value = (currentMessageIndex.value + 1) % messages.length
     currentMessage.value = messages[currentMessageIndex.value]
-  }, 3000)
+  }, 4000) // Slower message rotation
   
   // Set initial message
   currentMessage.value = messages[0]
@@ -104,7 +117,18 @@ const stopLoading = () => {
   if (messageInterval) {
     clearInterval(messageInterval)
   }
-  progressPercentage.value = 100
+  
+  // Complete the progress bar smoothly
+  const completeProgress = () => {
+    if (progressPercentage.value < 100) {
+      progressPercentage.value += 1
+      if (progressPercentage.value < 100) {
+        setTimeout(completeProgress, 50)
+      }
+    }
+  }
+  
+  completeProgress()
 }
 
 // Watch for visibility changes
