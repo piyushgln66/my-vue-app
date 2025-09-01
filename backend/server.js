@@ -11,7 +11,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173', // Vue dev server
     'http://localhost:3000', // Local development
-    'https://your-app.vercel.app', // Your Vercel domain (update this)
+    'https://my-vue-app-mocha-delta.vercel.app', // Your Vercel domain (update this)
     'https://yourdomain.com', // Your custom domain (update this)
     'https://www.yourdomain.com' // Your custom domain with www (update this)
   ],

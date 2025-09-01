@@ -194,7 +194,7 @@ async function submitQuestionnaire() {
     document.body.appendChild(loadingElement)
 
     // Call the API
-    const response = await fetch('http://localhost:3001/api/compare-funds', {
+    const response = await fetch('https://mutual-fund-comparator-backend.onrender.com/api/compare-funds', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
