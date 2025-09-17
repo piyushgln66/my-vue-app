@@ -120,8 +120,11 @@ function parseMarkdownTables(text) {
   let tableHTML = ''
   let tableRows = []
   
+  // Helper to strip citation-like markers such as [1], [2], [3]
+  const stripCitations = (s) => s.replace(/\[\d+\]/g, '')
+  
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
+    const line = stripCitations(lines[i].trim())
     
     // Check if this line starts a table (contains |)
     if (line.includes('|') && line.split('|').length > 2) {
@@ -167,6 +170,7 @@ function convertTableToHTML(tableRows) {
   if (tableRows.length < 2) return ''
   
   let html = '<div class="table-container"><table class="comparison-table">'
+  const stripCitations = (s) => s.replace(/\[\d+\]/g, '')
   
   // Process each row
   tableRows.forEach((row, index) => {
@@ -176,7 +180,7 @@ function convertTableToHTML(tableRows) {
       // Header row
       html += '<thead><tr>'
       cells.forEach(cell => {
-        const cleanCell = cell.trim().replace(/\*\*/g, '').replace(/\*/g, '')
+        const cleanCell = stripCitations(cell.trim()).replace(/\*\*/g, '').replace(/\*/g, '')
         html += `<th>${cleanCell}</th>`
       })
       html += '</tr></thead>'
@@ -187,7 +191,7 @@ function convertTableToHTML(tableRows) {
       // Data rows
       html += '<tr>'
       cells.forEach(cell => {
-        const cleanCell = cell.trim()
+        const cleanCell = stripCitations(cell.trim())
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
           .replace(/\*(.*?)\*/g, '<em>$1</em>')
         html += `<td>${cleanCell}</td>`
