@@ -103,8 +103,13 @@ const selectedFunds = computed(() => {
 
 
 const formattedAnalysis = computed(() => {
-  // Parse markdown tables and format the Perplexity response
-  return parseMarkdownTables(comparisonData.value)
+  // Display raw Perplexity response with basic formatting
+  const rawText = comparisonData.value || 'No comparison data available'
+  return rawText
+    .replace(/###\s+(.*)/g, '<h4>$1</h4>')  // Convert ### to h4 headings
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Convert **text** to bold
+    .replace(/\n/g, '<br>')  // Convert newlines to <br>
+    .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')  // Convert tabs to spaces
 })
 
 
@@ -432,6 +437,9 @@ onMounted(() => {
   /* Mobile text improvements */
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
+  font-family: monospace;
+  text-align: left;
 }
 
 .table-container {
